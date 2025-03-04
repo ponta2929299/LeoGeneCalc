@@ -19,8 +19,8 @@ class Gene(models.Model):
         return self.get_gene_type_display()
     #日本語ラベルを表示
     
-    def to_dict(self):
-        return{"gene_type": self.get_gene_type_display(),}#JASONに日本語ラベルを返す
+    # def to_dict(self):
+    #     return{"gene_type": self.get_gene_type_display(),}#JASONに日本語ラベルを返す
     
     
 #単一モルフ

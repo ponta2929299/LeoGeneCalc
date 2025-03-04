@@ -3,16 +3,39 @@ from morph.forms import MorphSelectForm
 from morph.models import Morph, ComboMorph
 from morph.dominant import calculate_d
 import json
+from django.contrib import messages
 
 def dominant_morph_view(request):
     if request.method == "POST":
         form = MorphSelectForm(request.POST)
         if form.is_valid():
+            
             #親１
             parent1_d_selected = form.cleaned_data["parent1_d_morphs"]
             # parent1_c_selected = form.cleaned_data["parent1_c_morphs"]
             # parent1_r_selected = form.cleaned_data["parent1_r_morphs"]
             # parent1_wild_selected = form.cleaned_data["parent1_wild_morphs"]
+            
+            
+        #同じmorphのhomoとhetが重複した場合、エラーをだす。
+            grouped_1 = {}
+            
+            for morph1_exclude2c in parent1_d_selected:
+                #2cを除去したmorph_nameを変数にいれる。
+                base_name = morph1_exclude2c.morph_name.rstrip('2c') 
+                
+                #base_nameをキーとした空のリスト作成。（重複なし）
+                if base_name not in grouped_1:
+                    grouped_1[base_name] = [] 
+                
+                #上記のリストにユーザーの選択したmorphを入れてく
+                grouped_1[base_name].append(morph1_exclude2c)
+                
+                #base_nameというキーと、groupという変数にいれた値のペア。groupが重複したら、エラー表示。
+                for base_name, group in grouped_1.items():
+                    if len(group) > 1:
+                        messages.error(request, f"親１のモルフ「{base_name}が重複しています。」")
+                        return redirect("calculate")
             
             
             #親２
@@ -21,17 +44,28 @@ def dominant_morph_view(request):
             # parent2_r_selected = form.cleaned_data["parent2_r_morphs"]
             # parent2_wild_selected = form.cleaned_data["parent2_wild_morphs"]
             
-            gene2_instance = parent2_d_selected.gene_type
-            gene2_dict = gene2_instance.to_dict()
-            gene2_json = json.dump(gene2_dict)
-            print(gene2_json)
+        #同じmorphのhomoとhetが重複した場合、エラーをだす。    
+            grouped_2 = {}
+            
+            for morph2_exclude2c in parent2_d_selected:
+                base_name = morph2_exclude2c.morph_name.rstrip('2c')
+                
+                if base_name not in grouped_2:
+                    grouped_2[base_name] = []
+                    
+                grouped_2[base_name].append(morph2_exclude2c)
+                
+                for base_name, group in grouped_2.items():
+                    if len(group) > 1:
+                        messages.error(request, f"親２のモルフ「{base_name}が重複しています。」")
+                        return redirect("calculate")
             
             if parent1_d_selected:
             #関数呼び出し
                 dominant_result = calculate_d(parent1_d_selected,parent2_d_selected)
                 if dominant_result:
-                    #呼び出した結果をsessionに保存
-                    request.session["result_d"] = dominant_result
+                    #呼び出した結果をsessionに保存(sessionにはJSON形式で入るため、str型になおす)
+                    request.session["result_d"] = json.dumps(dominant_result, default=str)
                     return redirect("result")
             
             else:
@@ -44,6 +78,7 @@ def dominant_morph_view(request):
 
 def result_view(request):
     
-    result_d = request.session.get("result_d","結果がありません")
+    result_d_json = request.session.get("result_d","結果がありません")
+    result_d = json.loads(result_d_json)
     
-    return render(request,"result.html",{"result_d":result_d})
+    return render(request,"morph/result.html",{"result_d":result_d})

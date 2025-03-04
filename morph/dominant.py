@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from .forms import MorphSelectForm
 from .models import Morph, ComboMorph
-import json
+import itertools
 # from .result_functions import result_pattern1,result_pattern2,result_pattern3,result_pattern4
 
 
@@ -10,32 +10,33 @@ import json
 def calculate_d(parent1_d_selected,parent2_d_selected):
     #計算結果を入れるリスト
     result_d = []
+    
+    none_gene = Morph.objects.filter(
+    gene_type__gene_type__in = ["-2"]
+    ).first()
+    
     for parent1_d in parent1_d_selected:
-        for parent2_d in parent2_d_selected:
+        for parent2_d in parent2_d_selected:  
+
             if parent1_d:
-                
-                gene1_instance = parent1_d.gene_type
-                gene1_dict = gene1_instance.to_dict()
-                gene1_json = json.dump(gene1_dict)
-                print(gene1_json)
                         
                 #parent1_dのmorph_nameを含み、かつ2Cのついているmorph_nameをMorphモデルからさがしいれる  
                 morph_instance = Morph.objects.filter(
                 morph_name__icontains = parent1_d.morph_name,#parent1_dのmorph_nameを含む
-                morph_name__endswith = "２C"#かつ２Cがついてる
+                morph_name__endswith = "2c"#かつ２Cがついてる
                 ).first()
         
-                morph_match = morph_instance.morph_name if morph_instance else "該当なし"
-                gene_match = morph_instance.gene_type if morph_instance else "該当なし"
+                morph_match = morph_instance.morph_name if morph_instance else None
+                gene_match = morph_instance.gene_type if morph_instance else None
 
                 # parent1のmorph_nameを含み、かつ2Cを含まないmorph_nameをMorphモデルからさがしいれる
                 morph_exclude_instance = Morph.objects.filter(
-                morph_name__icontains = parent1_d.morph_name).exclude(morph_name__endswith="２C"
+                morph_name__icontains = parent1_d.morph_name).exclude(morph_name__endswith="2c"
                 ).first()
 
-                morph_exclude_match = morph_exclude_instance if  morph_exclude_instance else "該当なし"
+                morph_exclude_match = morph_exclude_instance if  morph_exclude_instance else None
                 #上記に紐づくgene_type
-                gene_exclude_match = morph_exclude_instance.gene_type if morph_exclude_instance else "該当なし"
+                gene_exclude_match = morph_exclude_instance.gene_type if morph_exclude_instance else None
 
                 #Morphモデルの-2というgene_typeを表示する。
                 wild_gene_instance = Morph.objects.filter(
@@ -50,17 +51,21 @@ def calculate_d(parent1_d_selected,parent2_d_selected):
                 non_match_morph = [morph_name for morph_name in parent2_d_selected if morph_name != parent1_d ]
                 
                 #non_match_morphのうち、2Cが含まないもの
-                exclude_non_match_morph = [morph_name for morph_name in non_match_morph if not morph_name.morph_name.endswith("２C")]
+                exclude_non_match_morph = [morph_name for morph_name in non_match_morph if not morph_name.morph_name.endswith("2c")]
+                
+                #parent_dと同じ、かつ２ｃを含むmorph_name
+                
                 
             
                 # まず、parent1がエニグマもしくはホワイト&イエローの場合。
                 if parent1_d.morph_name in ["エニグマ","ホワイト&イエロー"]:
 
                     # parent1とまったく同じものがparent2にあったら、100%(D,D)
+                    # parent1のmorph_nameを含み、かつ2Cを含まないmorph_name
                     if parent1_d == parent2_d:
                         result_d.append([
-                            {"morph_name":morph_match,
-                            "gene_type":gene_match,
+                            {"morph_name":morph_exclude_match,
+                            "gene_type":gene_exclude_match,
                             "probability":0.25},
                             {"morph_name":parent1_d.morph_name,
                             "gene_type":parent1_d.gene_type,
@@ -109,14 +114,14 @@ def calculate_d(parent1_d_selected,parent2_d_selected):
                     if parent1_d == parent2_d:
 
                         # それが２ｃを含むかみる。2cの場合、(D2,D2)100% D2
-                        if "２C" in parent1_d.morph_name:                     
+                        if morph_match == parent2_d:                     
                             result_d.append([
                                     {"morph_name":parent1_d.morph_name,
                                     "gene_type":parent1_d.gene_type,
                                     "probability":1.0}
                                     ])
     
-                            # parent2_d_selectedにparent1_d_selected以外のものがあるかみる。
+                            # parent2_d_selectedにparent1_d_selected以外のものかつ、parent2_dがーでないものがあるかみる。
                             if non_match_morph:                       
                         
                                 # あった場合、それが２ｃを含むかみる。(-,D2)100%D
@@ -177,10 +182,10 @@ def calculate_d(parent1_d_selected,parent2_d_selected):
                     # 次に、まったく同じものがparent2になかった場合。
                     else:
                         # それが２ｃを含むかみる。
-                        if "２C" in parent1_d.morph_name:
+                        if morph_match:
                     
                             # parent1とおなじmorph_nameを含むものがparent2にあるかみる。(D2,D)
-                            if parent2_d.morph_name in parent1_d.morph_name:
+                            if morph_exclude_match == parent2_d.morph_name:
                                 result_d.append([
                                     {"morph_name":parent1_d.morph_name,
                                     "gene_type":parent1_d.gene_type,
@@ -242,41 +247,66 @@ def calculate_d(parent1_d_selected,parent2_d_selected):
                                             "probability":0.75}
                                             ])
 
-                        #２ｃを含まない場合(D,-)        
+                        #２ｃを含まない場合        
                         else:
-                            result_d.append([
-                                {"morph_name":parent1_d.morph_name,
-                                "gene_type":parent1_d.gene_type,
-                                "probability":0.25},
-                                {"morph_name":wild_morph,
-                                "gene_type":wild_gene,
-                                "probability":0.75}
-                                ])
+                            #かつ、Dの場合。(D,-)
+                            if wild_morph != parent1_d.morph_name:
+                                result_d.append([
+                                    {"morph_name":parent1_d.morph_name,
+                                    "gene_type":parent1_d.gene_type,
+                                    "probability":0.25},
+                                    {"morph_name":wild_morph,
+                                    "gene_type":wild_gene,
+                                    "probability":0.75}
+                                    ])
 
-                            # parent2_d_selectedにparent1_d_selected以外のものがあるかみる。
-                            if non_match_morph:
+                                # parent2_d_selectedにparent1_d_selected以外のものがあるかみる。
+                                if non_match_morph:
                                 
-                                # あった場合、それが２ｃを含むかみる。(-,D2)100%D
-                                if exclude_non_match_morph:
-                                    result_d.append([
-                                        {"morph_name":parent2_d.morph_name,
-                                        "gene_type":parent2_d.gene_type,
-                                        "probability":1.0}
-                                        ])
+                                    # あった場合、それが２ｃを含むかみる。(-,D2)100%D
+                                    if exclude_non_match_morph:
+                                        result_d.append([
+                                            {"morph_name":parent2_d.morph_name,
+                                            "gene_type":parent2_d.gene_type,
+                                            "probability":1.0}
+                                            ])
             
-                                # 2cを含まない場合、(-,D)
-                                else:
-                                    result_d.append([
-                                        {"morph_name":parent2_d.morph_name,
-                                        "gene_type":parent2_d.gene_type,
-                                        "probability":0.25},
-                                        {"morph_name":wild_morph,
-                                        "gene_type":wild_gene,
-                                        "probability":0.75}
-                                        ])
+                                    # 2cを含まない場合、(-,D)
+                                    else:
+                                        result_d.append([
+                                            {"morph_name":parent2_d.morph_name,
+                                            "gene_type":parent2_d.gene_type,
+                                            "probability":0.25},
+                                            {"morph_name":wild_morph,
+                                            "gene_type":wild_gene,
+                                            "probability":0.75}
+                                            ])
+                            
+                            else: #(-,D)or(-,D2)
+                                if non_match_morph:
+                                
+                                    # あった場合、それが２ｃを含むかみる。(-,D2)100%D
+                                    if exclude_non_match_morph:
+                                        result_d.append([
+                                            {"morph_name":parent2_d.morph_name,
+                                            "gene_type":parent2_d.gene_type,
+                                            "probability":1.0}
+                                            ])
+            
+                                    # 2cを含まない場合、(-,D)
+                                    else:
+                                        result_d.append([
+                                            {"morph_name":parent2_d.morph_name,
+                                            "gene_type":parent2_d.gene_type,
+                                            "probability":0.25},
+                                            {"morph_name":wild_morph,
+                                            "gene_type":wild_gene,
+                                            "probability":0.75}
+                                            ])
 
             else:
                 pass
+                #parent1_dが-の場合をつくる。
             
     return result_d
 

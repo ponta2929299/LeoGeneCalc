@@ -3,7 +3,7 @@ from .models import Morph, ComboMorph
 
 class MorphSelectForm(forms.Form):
     #親１の遺伝子選択
-    parent1_d_morphs = forms.ModelMultipleChoiceField(queryset=Morph.objects.filter(gene_type__gene_type__in=["D2","D"]).exclude(morph_name__in=["エニグマ２C","ホワイト&イエロー２C"]),\
+    parent1_d_morphs = forms.ModelMultipleChoiceField(queryset=Morph.objects.filter(gene_type__gene_type__in=["D2","D"]).exclude(morph_name__in=["エニグマ2c","ホワイトandイエロー2c"]),\
         label="顕性モルフ",widget=forms.SelectMultiple(attrs={"class":"form-control"}),required = False)
     
     # parent1_c_morphs = forms.ModelMultipleChoiceField(queryset=Morph.objects.filter(gene_type__gene_type__in=["C2","C"]),\
@@ -16,7 +16,7 @@ class MorphSelectForm(forms.Form):
     #     label="ワイルドモルフ",widget=forms.SelectMultiple(attrs={"class":"form-control"}),required = False)
     
     #親２の遺伝子選択
-    parent2_d_morphs = forms.ModelMultipleChoiceField(queryset=Morph.objects.filter(gene_type__gene_type__in=["D2","D"]).exclude(morph_name__in=["エニグマ２C","ホワイト&イエロー２C"]),\
+    parent2_d_morphs = forms.ModelMultipleChoiceField(queryset=Morph.objects.filter(gene_type__gene_type__in=["D2","D"]).exclude(morph_name__in=["エニグマ2c","ホワイトandイエロー2c"]),\
         label="顕性モルフ",widget=forms.SelectMultiple(attrs={"class":"form-control"}),required = False)
     
     # parent2_c_morphs = forms.ModelMultipleChoiceField(queryset=Morph.objects.filter(gene_type__gene_type__in=["C2","C"]),\
