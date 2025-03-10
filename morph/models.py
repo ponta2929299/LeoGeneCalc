@@ -12,8 +12,9 @@ class Gene(models.Model):
         ("R","潜性het"),
         ("-2","ワイルドhomo"),
         ("-","ワイルドhet"),
+        ("N","no_name"),
     ]
-    gene_type = models.CharField(max_length = 3,choices = TYPE_CHOICES) 
+    gene_type = models.CharField(max_length = 10,choices = TYPE_CHOICES) 
     
     def __str__(self):
         return self.get_gene_type_display()

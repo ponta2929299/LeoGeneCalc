@@ -67,6 +67,7 @@ def dominant_morph_view(request):
             if parent1_d_select:
             #関数呼び出し
                 dominant_result = calculate_d(parent1_d_select,parent2_d_select)
+                print(dominant_result)
                 if dominant_result:
                     #呼び出した結果をsessionに保存(sessionにはJSON形式で入るため、str型になおす)
                     request.session["result_d"] = json.dumps(dominant_result, default=str)
