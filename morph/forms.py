@@ -3,7 +3,7 @@ from .models import Morph, ComboMorph
 
 class MorphSelectForm(forms.Form):
     #親１の遺伝子選択
-    parent1_d_morphs = forms.ModelMultipleChoiceField(queryset=Morph.objects.filter(gene_type__gene_type__in=["D2","D"]).exclude(morph_name__in=["エニグマ2c","ホワイトandイエロー2c"]),\
+    parent1_d_morphs = forms.ModelMultipleChoiceField(queryset=Morph.objects.filter(gene_type__gene_type__in=["D2","D"]).exclude(morph_name__in=["エニグマ2c","ホワイトandイエロー2c","end"]),\
         label="顕性モルフ",widget=forms.SelectMultiple(attrs={"class":"form-control"}),required = False)
     
     # parent1_c_morphs = forms.ModelMultipleChoiceField(queryset=Morph.objects.filter(gene_type__gene_type__in=["C2","C"]),\

@@ -12,9 +12,13 @@
     <nav class="navbar fixed-top navber-expand navbar-light bg-light">
         <ul style="width:100%" class="navbar-nav mr-auto">
             <li class="nav-item"> 
-                <form action={%url "logout"%}  method= "POST">
+                <form action='{%url "logout"%}'  method= "POST">
                     {%csrf_token%}
                     <button type="submit" class="btn btn-secondary">ログアウト</button>
+                </form>
+                <form action='{%url "user_delete"%}' method = "POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">アカウントを削除</button>
                 </form>
             </li>
         </ul>

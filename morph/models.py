@@ -20,18 +20,25 @@ class Gene(models.Model):
         return self.get_gene_type_display()
     #日本語ラベルを表示
     
-    # def to_dict(self):
-    #     return{"gene_type": self.get_gene_type_display(),}#JASONに日本語ラベルを返す
-    
     
 #単一モルフ
 class Morph(models.Model):
-    morph_name = models.CharField(max_length = 100,primary_key=True)
+    id = models.AutoField(primary_key=True)
+    morph_name = models.CharField(max_length = 100)
     gene_type = models.ForeignKey(Gene, on_delete=models.PROTECT)
     morph_detail = models.TextField(null=True, blank=True)
     
+    def save(self, *args, **kwargs):
+        if self.morph_name == "end":
+            max_id = Morph.objects.aggregate(models.Max('id'))['id__max']
+            self.id = max_id + 1 if max_id else 1
+        super(Morph, self).save(*args, **kwargs)
+
+    
     def __str__(self):
         return self.morph_name
+    
+    
     
     
 #コンボモルフ

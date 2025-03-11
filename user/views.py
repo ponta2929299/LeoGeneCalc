@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from .forms import CustomUserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
+from django.contrib import messages
 
 #signup用
 def signup(request):
@@ -21,3 +22,12 @@ def signup(request):
 def user_info(request):
     user = request.user
     return render(request, "user/user_info.html", {"user":user})
+
+@login_required
+def user_delete(request):
+    if request.method == "POST":
+        user = request.user
+        user.delete()
+        messages.success(request,"アカウントが削除されました。")
+        return redirect("calculate")
+    return render(request,"user/delete.html")

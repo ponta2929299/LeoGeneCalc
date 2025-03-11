@@ -6,16 +6,23 @@ from itertools import chain
 #Dominantの計算
 def calculate_d(parent1_d_select,parent2_d_select):
     #リストの最後にマーカーをつける
-    parent1_d_selected = chain(parent1_d_select,["end"])
+    end_instance = Morph.objects.get(morph_name="end")
+    parent1_d_selected = parent1_d_select.union(Morph.objects.filter(id=end_instance.id))
+    parent2_d_selected = parent2_d_select.union(Morph.objects.filter(id=end_instance.id))
+    
+    parent1_d_selected = parent1_d_selected.order_by('id')
+    parent2_d_selected = parent2_d_selected.order_by("id")
+
+    # parent1_d_selected = chain(parent1_d_select,["end"])
     # parent2_d_selected = chain(parent2_d_select,["end"])
     #計算結果を入れるリスト
     result_d = []
     
     for parent1_d in parent1_d_selected:
-        parent2_d_selected = chain(parent2_d_select,["end"])
+        # parent2_d_selected = chain(parent2_d_select,["end"])
         for parent2_d in parent2_d_selected:
-            if parent1_d != "end":
-                if parent2_d != "end":  
+            if parent1_d.morph_name != "end":
+                if parent2_d.morph_name != "end":  
                     
                     #parent1_dのmorph_nameを含み、かつ2Cのついているmorph_nameをMorphモデルからさがしいれる  
                     morph_instance = Morph.objects.filter(
