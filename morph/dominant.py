@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from .forms import MorphSelectForm
 from .models import Morph, ComboMorph
-from itertools import chain
 
 #Dominantの計算
 def calculate_d(parent1_d_select,parent2_d_select):
@@ -13,13 +12,10 @@ def calculate_d(parent1_d_select,parent2_d_select):
     parent1_d_selected = parent1_d_selected.order_by('id')
     parent2_d_selected = parent2_d_selected.order_by("id")
 
-    # parent1_d_selected = chain(parent1_d_select,["end"])
-    # parent2_d_selected = chain(parent2_d_select,["end"])
-    #計算結果を入れるリスト
     result_d = []
     
     for parent1_d in parent1_d_selected:
-        # parent2_d_selected = chain(parent2_d_select,["end"])
+        
         for parent2_d in parent2_d_selected:
             if parent1_d.morph_name != "end":
                 if parent2_d.morph_name != "end":  
@@ -40,8 +36,6 @@ def calculate_d(parent1_d_select,parent2_d_select):
                     morph_exclude_match = morph_exclude_instance if  morph_exclude_instance else None
                     #上記に紐づくgene_type
                     gene_exclude_match = morph_exclude_instance.gene_type if morph_exclude_instance else None
-            
-                    print(type(parent1_d))  # parent2_dの型を確認
                                 
                     #parent2_dのmorph_nameを含み、かつ2Cのついているmorph_nameをMorphモデルからさがしいれる  
                     morph2_instance = Morph.objects.filter(
@@ -171,22 +165,42 @@ def calculate_d(parent1_d_select,parent2_d_select):
                             continue
                 # (x,-)
                 else:
-                    #(D,-)
-                    if parent1_d.morph_name in ["エニグマ","ホワイト&イエロー"]:
-                        result_d.append([
-                            {"morph_name":parent1_d.morph_name,
-                            "gene_type":parent1_d.gene_type,
-                            "probability":0.5},
-                            {"morph_name":wild_morph,
-                            "gene_type":wild_gene,
-                            "probability":0.5}
-                            ])
-                        continue
+                    first_list = []
+                    #parent2_d_selecteedのなかにない、parent1_dをだす。リストa
+                    #この時点では、2C以外が一致しているmorph_nameも含まれている
+                    
+                    if parent1_d.morph_name == "end":
+                        break
+                    
+                    elif parent1_d not in parent2_d_selected:
+                        first_list.append(parent1_d)
                         
-                    else:
-                        #(D,-)
-                        if parent1_d == morph_exclude_match:
-                            result_d.append([
+                        for items in first_list:
+                        #もし、first_listが(parent1_d)が２ｃを含むなら、
+                        #morph_match = parent1_dのmorph_nameを含み、かつ2Cのついているmorph_name
+                            if items == morph_match:
+                                #morph_exclude_match = b(...2c)の2cがないmorph_nameがparent1_d_selectedにあるかみる。
+                                #あったら、該当したmorph_nameをto_removeにいれる。
+                                if morph_exclude_match in parent1_d_selected:
+                                    first_list.remove(items)
+        
+                            #parent2_d_listにA2、parent2_dにAという状況の除外
+                            if morph_match in parent2_d_selected:
+                                first_list.remove(morph_match)
+                                
+                        #ここからは、完全に重複のないparent2_d_selectedないのmorph_nameの計算
+                        for j in first_list:
+                            # (D2,-)
+                            if j == morph_match:
+                                result_d.append([
+                                {"morph_name":morph_exclude_match,
+                                "gene_type":gene_exclude_match ,
+                                "probability":1.0}
+                                ])
+                                continue
+                            #(D,-)
+                            else:
+                                result_d.append([
                                 {"morph_name":parent1_d.morph_name,
                                 "gene_type":parent1_d.gene_type,
                                 "probability":0.5},
@@ -194,28 +208,24 @@ def calculate_d(parent1_d_select,parent2_d_select):
                                 "gene_type":wild_gene,
                                 "probability":0.5}
                                 ])
-                        #(D2,-)
-                        else:
-                            result_d.append([
-                                {"morph_name":morph_exclude_match,
-                                "gene_type":gene_exclude_match,
-                                "probability":1.0}
-                                ])
-                            continue
+                                continue
+                                            
+                    else:
+                        continue
                 
             #(-,x)
             else:
-                first_list = []
+                second_list = []
         
                 #parent1_d_selecteedのなかにない、parent2_dをだす。リストa
                 #この時点では、2C以外が一致しているmorph_nameも含まれている。
                 
                 #(-,-)
-                if parent2_d == "end":
+                if parent2_d.morph_name == "end":
                     break
         
                 elif parent2_d not in parent1_d_selected:
-                    first_list.append(parent2_d)
+                    second_list.append(parent2_d)
                     
                     #もし、first_listからだしたinclude_2cが、morph_nameに２ｃを含むなら、2cをのぞいたmorph_nameがparent1_d_selectedにあるかみる。
                     #あったら、pass
@@ -224,21 +234,21 @@ def calculate_d(parent1_d_select,parent2_d_select):
                     #あったら、pass
                     #なっかたら、(-,D)の計算
             
-                    for items in first_list:
+                    for items in second_list:
                         #もし、first_listが(parent2_d)が２ｃを含むなら、
                         #morph2_match = parent2_dのmorph_nameを含み、かつ2Cのついているmorph_name
                         if items == morph2_match:
                                 #morph2_exclude_match = b(...2c)の2cがないmorph_nameがparent1_d_selectedにあるかみる。
                                 #あったら、該当したmorph_nameをto_removeにいれる。
                             if morph2_exclude_match in parent1_d_selected:
-                                first_list.remove(items)
+                                second_list.remove(items)
         
                             #parent1_d_listにA2、parent2_dにAという状況の除外
                         if morph2_match in parent1_d_selected:
-                            first_list.remove(morph2_match)
+                            second_list.remove(morph2_match)
                 
                         #ここからは、完全に重複のないparent2_d_selectedないのmorph_nameの計算
-                    for i in first_list:
+                    for i in second_list:
                         # (-,D2)
                         if i == morph2_match:
                             result_d.append([
@@ -260,29 +270,9 @@ def calculate_d(parent1_d_select,parent2_d_select):
                             continue
                 else:
                     continue
+    
+    return(result_d)
                 
-                # #(-,x)のxが今まで計算されてない遺伝子であったら、
-                # if non_match_morph:
-                #         #(-,D)
-                #         if exclude_non_match_morph:
-                #             result_d.append([
-                #                     {"morph_name":parent2_d.morph_name,
-                #                     "gene_type":parent2_d.gene_type,
-                #                     "probability":0.5},
-                #                     {"morph_name":wild_morph,
-                #                     "gene_type":wild_gene,
-                #                     "probability":0.5}
-                #                     ])
-                #             continue
-                #         #(-,D2)
-                #         else:
-                #             result_d.append([
-                #                     {"morph_name":parent2_d.morph_name,
-                #                     "gene_type":parent2_d.gene_type,
-                #                     "probability":1.0}
-                #                     ])
-                #             continue
-                #parent2_dにparent1_dと異なるものがなっかた場合、
 
 """
 result_d = []

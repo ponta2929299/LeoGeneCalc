@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from morph.forms import MorphSelectForm
 from morph.models import Morph, ComboMorph
 from morph.dominant import calculate_d
+from morph.co_dominant import calculate_c
 import json
 from django.contrib import messages
 
@@ -12,7 +13,7 @@ def dominant_morph_view(request):
             
             #親１
             parent1_d_select = form.cleaned_data["parent1_d_morphs"]
-            # parent1_c_selected = form.cleaned_data["parent1_c_morphs"]
+            parent1_c_select = form.cleaned_data["parent1_c_morphs"]
             # parent1_r_selected = form.cleaned_data["parent1_r_morphs"]
             # parent1_wild_selected = form.cleaned_data["parent1_wild_morphs"]
             
@@ -43,7 +44,7 @@ def dominant_morph_view(request):
             
             #親２
             parent2_d_select = form.cleaned_data["parent2_d_morphs"]
-            # parent2_c_selected = form.cleaned_data["parent2_c_morphs"]
+            parent2_c_select = form.cleaned_data["parent2_c_morphs"]
             # parent2_r_selected = form.cleaned_data["parent2_r_morphs"]
             # parent2_wild_selected = form.cleaned_data["parent2_wild_morphs"]
             
@@ -67,11 +68,14 @@ def dominant_morph_view(request):
             if parent1_d_select:
             #関数呼び出し
                 dominant_result = calculate_d(parent1_d_select,parent2_d_select)
-                print(dominant_result)
+                co_dominant_result = calculate_c(parent1_c_select,parent1_c_select)
+                
                 if dominant_result:
-                    #呼び出した結果をsessionに保存(sessionにはJSON形式で入るため、str型になおす)
-                    request.session["result_d"] = json.dumps(dominant_result, default=str)
-                    return redirect("result")
+                    if co_dominant_result:
+                        #呼び出した結果をsessionに保存(sessionにはJSON形式で入るため、str型になおす)
+                        request.session["result_d"] = json.dumps(dominant_result, default=str)
+                        request.session["result_c"] = json.dumps(co_dominant_result, default=str)
+                        return redirect("result")
             
             else:
                 pass

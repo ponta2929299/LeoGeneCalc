@@ -20,7 +20,7 @@ class Gene(models.Model):
         return self.get_gene_type_display()
     #日本語ラベルを表示
     
-    
+
 #単一モルフ
 class Morph(models.Model):
     id = models.AutoField(primary_key=True)
@@ -38,12 +38,10 @@ class Morph(models.Model):
     def __str__(self):
         return self.morph_name
     
-    
-    
-    
+
 #コンボモルフ
 class ComboMorph(models.Model):
-    combo_morph_name = models.CharField(max_length = 100,primary_key=True)
+    combo_morph_name = models.CharField(max_length = 100, primary_key=True)
     morphs = models.ManyToManyField(Morph)
     description = models.TextField(null=True, blank=True)
     
