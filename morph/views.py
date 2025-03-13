@@ -88,6 +88,8 @@ def dominant_morph_view(request):
 def result_view(request):
     
     result_d_json = request.session.get("result_d","結果がありません")
+    result_c_json = request.session.get("result_c","結果がありません")
     result_d = json.loads(result_d_json)
+    result_c = json.loads(result_c_json)
     
-    return render(request,"morph/result.html",{"result_d":result_d})
+    return render(request,"morph/result.html",{"result_d":result_d,"result_c":result_c})
